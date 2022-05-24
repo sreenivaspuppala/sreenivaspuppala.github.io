@@ -1,12 +1,4 @@
 # Default values for zabbix.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-# with this dict, you can set unified DB access credentials, IP and so on for both Zabbix server and Zabbix web frontend
-# you can either chose from having all this in one named (preexisting) secret or setting the values one by one with vars
-# whatever set here overrides the credential settings within the "zabbixserver" and "zabbixweb" sections.
-
-# -- under this section you can configure DB access and credentials centrally for the entire helm chart.
-# -- All relevant components installed by this chart will respect it: zabbixserver, zabbixweb and postgresql (if enabled)
 
 db_access:
   # -- components at once, or if left uncommented, set the credentials for each of the components manually
@@ -21,57 +13,6 @@ db_access:
   # -- Name of database
   POSTGRES_DB: "zabbix"
 
-# **Zabbix Server** configurations
-zabbixserver:
-  # -- Enables use of **Zabbix Server**
-  enabled: true
-  # -- Number of replicas of ``zabbixserver`` module
-  replicaCount: 1
-  # -- optional set true open a port direct on node where zabbix server runs
-  hostPort: false
-  # -- optional set hostIP different from 0.0.0.0 to open port only on this IP
-  hostIP: 0.0.0.0
-  resources: {}
-  image:
-    # -- Zabbix server Docker image name
-    repository: zabbix/zabbix-server-pgsql
-    # -- Tag of Docker image of Zabbix server
-    tag: ubuntu-6.0.4
-    # -- Pull policy of Docker image
-    pullPolicy: IfNotPresent
-    # -- List of dockerconfig secrets names to use when pulling images
-    pullSecrets: []
-  # -- Address of database host
-  #DB_SERVER_HOST: "zabbix-postgresql"
-  # -- Port of database host
-  #DB_SERVER_PORT: "5432"
-  # -- User of database
-  #POSTGRES_USER: "zabbix"
-  # -- Password of database
-  #POSTGRES_PASSWORD: "zabbix"
-  # -- Name of a secret used for Postgres Password, if set, it overrules the POSTGRES_PASSWORD value
-  #POSTGRES_PASSWORD_SECRET: ""
-  # -- Key of the secret used for Postgres Password, requires POSTGRES_PASSWORD_SECRET, defaults to password
-  #POSTGRES_PASSWORD_SECRET_KEY: "password"
-  # -- Name of database
-  #POSTGRES_DB: "zabbix"
-  service:
-    # -- Type of service in Kubernetes cluster
-    type: ClusterIP
-    # -- Cluster IP for Zabbix server
-    clusterIP:
-    # -- Port of service in Kubernetes cluster
-    port: 10051
-    # -- NodePort of service on each node
-    nodePort: 31051
-    # -- Annotations for the zabbix-server service
-    annotations: {}
-    # metallb.universe.tf/address-pool: production-public-ips
-  # -- Extra environment variables. A list of additional environment variables. See example: https://github.com/cetic/helm-zabbix/blob/master/docs/example/kind/values.yaml
-  extraEnv: []
-    #- name: ENABLE_TIMESCALED
-    #  value: "true"
-
 # **PostgreSQL** configurations
 postgresql:
   # -- Create a database using Postgresql
@@ -79,18 +20,14 @@ postgresql:
   image:
     # -- Postgresql Docker image name: chose one of "postgres" or "timescale/timescaledb"
     repository: postgres
-    # -- Tag of Docker image of Postgresql server, chose "14" for postgres or "latest-pg14" for timescaledb
-    tag: 14
     # -- Pull policy of Docker image
     pullPolicy: IfNotPresent
-    # -- List of dockerconfig secrets names to use when pulling images
-    pullSecrets: []
   # -- User of database
-  #POSTGRES_USER: "zabbix"
+  POSTGRES_USER: "zabbix"
   # -- Password of database
-  #POSTGRES_PASSWORD: "zabbix"
+  POSTGRES_PASSWORD: "zabbix"
   # -- Name of database
-  #POSTGRES_DB: "zabbix"
+  POSTGRES_DB: "zabbix"
   #- max simultaneous connections to accept for the Postgres server
   max_connections: 50
   persistence:
@@ -115,53 +52,54 @@ postgresql:
   # -- Extra environment variables. A list of additional environment variables.
   extraEnv: []
 
-# **Zabbix Proxy** configurations
-zabbixproxy:
-  # -- Enables use of **Zabbix Proxy**
+
+# **Zabbix Server** configurations
+zabbixserver:
+  # -- Enables use of **Zabbix Server**
   enabled: true
-  # -- Number of replicas of ``zabbixproxy`` module
+  # -- Number of replicas of ``zabbixserver`` module
   replicaCount: 1
+  # -- optional set true open a port direct on node where zabbix server runs
+  hostPort: false
+  # -- optional set hostIP different from 0.0.0.0 to open port only on this IP
+  hostIP: 0.0.0.0
   resources: {}
   image:
-    # -- Zabbix proxy Docker image name
-    repository: zabbix/zabbix-proxy-sqlite3
-    # -- Tag of Docker image of Zabbix proxy
-    tag: ubuntu-6.0.4
+    # -- Zabbix server Docker image name
+    repository: zabbix/zabbix-server-pgsql
     # -- Pull policy of Docker image
     pullPolicy: IfNotPresent
-    # -- List of dockerconfig secrets names to use when pulling images
-    pullSecrets: []
-  # -- The variable allows to switch Zabbix proxy mode. Bu default, value is 0 - active proxy. Allowed values are 0 and 1.
-  ZBX_PROXYMODE: 0
-  # -- Zabbix proxy hostname
-  # Case sensitive hostname
-  ZBX_HOSTNAME: zabbix-proxy # This variable is unique, case sensitive hostname.
-  # -- Zabbix server host
-  ZBX_SERVER_HOST: zabbix-zabbix-server
-  # -- Zabbix server port
-  ZBX_SERVER_PORT: 10051
-  # ZBX_LOADMODULE: dummy1.so,dummy2.so # The variable is list of comma separated loadable Zabbix modules. It works with volume /var/lib/zabbix/modules.
-  # The variable is used to specify debug level, from 0 to 5
-  # ZBX_DEBUGLEVEL: 4
-  # The variable is used to specify timeout for processing checks. By default, value is 4.
-  #ZBX_TIMEOUT: 4
-
-  # -- The variable enable communication with Zabbix Java Gateway to collect Java related checks. By default, value is false.
-  ZBX_JAVAGATEWAY_ENABLE: false
-  # -- Cache size
-  ZBX_VMWARECACHESIZE: 128M
+  # -- Address of database host
+  DB_SERVER_HOST: "zabbix-postgresql"
+  # -- Port of database host
+  DB_SERVER_PORT: "5432"
+  # -- User of database
+  POSTGRES_USER: "zabbix"
+  # -- Password of database
+  POSTGRES_PASSWORD: "zabbix"
+  # -- Name of a secret used for Postgres Password, if set, it overrules the POSTGRES_PASSWORD value
+  POSTGRES_PASSWORD_SECRET: ""
+  # -- Key of the secret used for Postgres Password, requires POSTGRES_PASSWORD_SECRET, defaults to password
+  POSTGRES_PASSWORD_SECRET_KEY: "password"
+  # -- Name of database
+  POSTGRES_DB: "zabbix"
   service:
-    # -- Type of service for Zabbix proxy
+    # -- Type of service in Kubernetes cluster
     type: ClusterIP
-    # -- Cluster IP for Zabbix proxy
+    # -- Cluster IP for Zabbix server
     clusterIP:
-    # -- Port to expose service
+    # -- Port of service in Kubernetes cluster
     port: 10051
-    # -- Annotations for the zabbix-proxy service
+    # -- NodePort of service on each node
+    nodePort: 31051
+    # -- Annotations for the zabbix-server service
     annotations: {}
     # metallb.universe.tf/address-pool: production-public-ips
   # -- Extra environment variables. A list of additional environment variables. See example: https://github.com/cetic/helm-zabbix/blob/master/docs/example/kind/values.yaml
   extraEnv: []
+    #- name: ENABLE_TIMESCALED
+    #  value: "true"
+
 
 # **Zabbix Agent** configurations
 zabbixagent:
@@ -171,12 +109,8 @@ zabbixagent:
   image:
     # -- Zabbix agent Docker image name. Can use zabbix/zabbix-agent or zabbix/zabbix-agent2
     repository: zabbix/zabbix-agent
-    # -- Tag of Docker image of Zabbix agent
-    tag: ubuntu-6.0.4
     # -- Pull policy of Docker image
     pullPolicy: IfNotPresent
-    # -- List of dockerconfig secrets names to use when pulling images
-    pullSecrets: []
   # -- Zabbix server host
   ZBX_SERVER_HOST: 127.0.0.1
   # -- Zabbix server port
@@ -187,15 +121,6 @@ zabbixagent:
   ZBX_PASSIVESERVERS: 127.0.0.1
   # -- This variable is boolean (true or false) and enables or disables feature of active checks
   ZBX_ACTIVE_ALLOW: true
-  # The variable is comma separated list of allowed Zabbix server or proxy hosts for connections to Zabbix agent container. You may specify port.
-  # ZBX_ACTIVESERVERS:
-  # The variable is list of comma separated loadable Zabbix modules. It works with volume /var/lib/zabbix/modules.
-  # ZBX_LOADMODULE: dummy1.so,dummy2.so
-  # The variable is used to specify debug level, from 0 to 5
-  #ZBX_DEBUGLEVEL: 3
-  # The variable is used to specify timeout for processing checks. By default, value is 4.
-  #ZBX_TIMEOUT: 4
-
   # -- The variable enable communication with Zabbix Java Gateway to collect Java related checks. By default, value is false.
   ZBX_JAVAGATEWAY_ENABLE: false
   # -- Cache size
@@ -220,23 +145,19 @@ zabbixweb:
   resources: {}
   image:
     # -- Zabbix web Docker image name
-    repository: zabbix/zabbix-web-apache-pgsql
-    # -- Tag of Docker image of Zabbix web
-    tag: ubuntu-6.0.4
+    repository: zabbix/zabbix-web-nginx-pgsql
     # -- Pull policy of Docker image
     pullPolicy: IfNotPresent
-    # -- List of dockerconfig secrets names to use when pulling images
-    pullSecrets: []
   # -- Zabbix server host
-  #DB_SERVER_HOST: zabbix-postgresql
+  DB_SERVER_HOST: zabbix-postgresql
   # -- Port of database
-  #DB_SERVER_PORT: 5432
+  DB_SERVER_PORT: 5432
   # -- User of database
-  #POSTGRES_USER: zabbix
+  POSTGRES_USER: zabbix
   # -- Password of database
-  #POSTGRES_PASSWORD: zabbix
+  POSTGRES_PASSWORD: zabbix
   # -- Name of database
-  #POSTGRES_DB: zabbix
+  POSTGRES_DB: zabbix
   service:
     # -- Type of service for Zabbix web
     type: NodePort
